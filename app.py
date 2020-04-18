@@ -55,7 +55,7 @@ def precipitation():
     year_ago_date = dt.date(LastYear, LastMonth, LastDay) - dt.timedelta(days=365)
     year_ago_date = dt.datetime.strftime(year_ago_date, '%Y-%m-%d')
 
-    #Query of prcp data for year that will include the data, prcp and station id 
+    #Query of prcp data for year that will include the date, prcp and station id 
     responses1 = (session.query(Measurement.date, Measurement.prcp, Measurement.station).filter(Measurement.date >= year_ago_date).order_by(Measurement.date).all())
     
     #Creation of open list to store data 
@@ -90,7 +90,7 @@ def temperature():
     year_ago_date = dt.date(LastYear, LastMonth, LastDay) - dt.timedelta(days=365)
     year_ago_date = dt.datetime.strftime(year_ago_date, '%Y-%m-%d')
     
-    
+
     responses3 = (session.query(Measurement.date, Measurement.tobs, Measurement.station).filter(Measurement.date > year_ago_date).order_by(Measurement.date).all())
 
     Temperature_Data = []
@@ -99,6 +99,40 @@ def temperature():
         Temperature_Data.append(Temperature_dictionary)
 
     return jsonify(Temperature_Data)
+
+
+@app.route('/api/v1.0/datesearch/StartDate')
+def start(StartDate):
+    select = [Measurement.date, func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)]
+
+    responses4 =  (session.query(*select).filter(func.strftime("%Y-%m-%d", Measurement.date) >= StartDate).group_by(Measurement.date).all())
+
+    Dates_Data = []                       
+    for response in responses4:
+        Dates_dictionary = {}
+        Dates_dictionary["date"] = response[0]
+        Dates_dictionary["low_temp"] = response[1]
+        Dates_dictionary["average_temp"] = response[2]
+        Dates_dictionary["high_temp"] = response[3]
+        Dates_Data.append(Dates_dictionary)
+    return jsonify(Dates_Data)
+
+@app.route('/api/v1.0/datesearch/StartEndDate')
+def StartEnd(StartDate, EndDate):
+    select2 = [Measurement.date, func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)]
+
+    responses5 =  (session.query(*select2).filter(func.strftime("%Y-%m-%d", Measurement.date) >= StartDate).filter(func.strftime("%Y-%m-%d", Measurement.date) <= EndDate).group_by(Measurement.date).all())
+
+    Dates_Data2 = []                       
+    for response in responses5:
+        Dates_dictionary2 = {}
+        Dates_dictionary2["date"] = response[0]
+        Dates_dictionary2["low_temp"] = response[1]
+        Dates_dictionary2["average_temp"] = response[2]
+        Dates_dictionary2["high_temp"] = response[3]
+        Dates_Data2.append(Dates_dictionary2)
+    
+    return jsonify(Dates_Data2)
 
 if __name__ == '__main__':
     app.run(debug=True)
